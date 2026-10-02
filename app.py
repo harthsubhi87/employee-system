@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import io
 
-# 1. إعدادات الصفحة - تثبيت القائمة الجانبية مسبقاً
+# 1. إعدادات الصفحة
 st.set_page_config(
     page_title="نظام إدارة الموظفين - المائي",
     page_icon="💎",
@@ -11,15 +11,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. تصميم CSS المتقدم جداً لمحاكاة واجهة المحاكاة (Glassmorphic Mockup)
+# 2. تصميم CSS المتقدم لمحاكاة الواجهة الزجاجية المائية
 st.markdown("""
 <style>
-    /* 1. الخلفية العامة المائية */
     .stApp {
         background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #e1f5fe 100%);
     }
     
-    /* 2. إخفاء عناصر Streamlit الافتراضية للسيطرة على التصميم */
     [data-testid="stSidebar"] > div:first-child {
         background-color: transparent !important;
         background-image: none !important;
@@ -28,15 +26,13 @@ st.markdown("""
         visibility: hidden !important;
     }
     [data-testid="stAppViewContainer"] {
-        padding-top: 2rem;
+        padding-top: 1.5rem;
     }
 
-    /* 3. محاذاة كافة النصوص والحقول للوسط */
-    p, h1, h2, h3, h4, label, input, select, textarea, [data-testid="stForm"] {
+    p, h1, h2, h3, h4, label, input, select, textarea {
         text-align: center !important;
     }
     
-    /* 4. تصميم القائمة الجانبية (Left Panel) كلوحة زجاجية متصلة */
     [data-testid="stSidebar"] {
         background: rgba(255, 255, 255, 0.5) !important;
         backdrop-filter: blur(15px);
@@ -45,11 +41,7 @@ st.markdown("""
         border-radius: 0 20px 20px 0;
         box-shadow: 4px 0 24px rgba(0,0,0,0.03);
     }
-    [data-testid="stSidebarNav"] {
-        padding-top: 1rem;
-    }
     
-    /* 5. تصميم منطقة المحتوى الرئيسية (Main Area) كلوحة زجاجية */
     .glass-card {
         background: rgba(255, 255, 255, 0.6) !important;
         backdrop-filter: blur(12px);
@@ -57,11 +49,10 @@ st.markdown("""
         border-radius: 16px;
         border: 1px solid rgba(255, 255, 255, 0.8);
         box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-        padding: 30px;
+        padding: 25px;
         margin-bottom: 25px;
     }
     
-    /* 6. محاكاة الهيدر العلوي الخاص بالمحاكاة */
     .mock-header {
         background: rgba(255, 255, 255, 0.6);
         backdrop-filter: blur(10px);
@@ -76,24 +67,22 @@ st.markdown("""
         font-weight: bold;
     }
 
-    /* 7. تصميم الأزرار المائية الملساء */
     .stButton>button {
         border-radius: 12px;
         font-weight: bold;
         transition: all 0.3s ease;
         width: 100%;
         border: none;
-        background: rgba(255, 255, 255, 0.6) !important;
-        border: 1px solid rgba(255, 255, 255, 0.8);
+        background: rgba(255, 255, 255, 0.7) !important;
+        border: 1px solid rgba(255, 255, 255, 0.9);
         color: #0284c7 !important;
     }
     .stButton>button:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        background: rgba(255, 255, 255, 0.9) !important;
+        background: rgba(255, 255, 255, 0.95) !important;
     }
     
-    /* 8. تصميم حقول الإدخال */
     .stTextInput>div>div>input {
         text-align: center !important;
         border-radius: 10px;
@@ -105,24 +94,27 @@ st.markdown("""
 
 DATA_FILE = "Data_Employees.xlsx"
 
-# 3. تحميل البيانات
+# 3. تحميل البيانات بأمان مع تنظيف الفواصل والأسماء
 @st.cache_data(ttl=1)
 def load_data():
     if os.path.exists(DATA_FILE):
-        df = pd.read_excel(DATA_FILE)
-        df.columns = [str(col).strip() for col in df.columns]
-        return df
-    else:
-        cols = ['#', 'الاسم الرباعي', 'الرقم الوظيفي', 'العنوان الوظيفي', 'الشهادة', 'الجنس', 
-                'الدرجة الوظيفية', 'المرحلة', 'الراتب الاسمي', 'الاختصاص العام', 'الاختصاص الدقيق', 
-                'سنة التخرج', 'رقم امر التعيين', 'تاريخ التعيين', 'تاريخ المباشرة', 'رقم الهاتف', 
-                'اسم الام الثلاثي', 'الحالة الزوجية', 'اسم الزوجة', 'الرقم الوطني', 'تاريخ اصداره', 
-                'تاريخ التولد', 'جهة الإصدار', 'محل الولادة', 'رقم البطاقة التموينية', 'محلة - زقاق - دار', 
-                'رقم وثيقة التخرج', 'تاريخ اصدار وثيقة التخرج', 'رقم صحة الصدور', 'تاريخ صحة الصدور', 
-                'عنوان السكن', 'اقرب نقطة دالة', 'رقم الهوية', 'الملاحظات']
-        # إضافة سجلات عينة كما في المحاكاة
-        sample_data = [[1, 'أحمد محمد علي الحسيني', 'EMP-1001', 'رئيس مهندسين قدم', 'بكالوريوس', 'ذكر']] + [[""] * 34 for _ in range(3)]
-        return pd.DataFrame(sample_data, columns=cols)
+        try:
+            df = pd.read_excel(DATA_FILE)
+            df.columns = [str(col).strip() for col in df.columns]
+            if not df.empty:
+                return df
+        except Exception:
+            pass
+            
+    cols = ['الاسم الرباعي', 'الرقم الوظيفي', 'العنوان الوظيفي', 'الشهادة', 'الجنس', 
+            'الدرجة الوظيفية', 'المرحلة', 'الراتب الاسمي', 'الاختصاص العام', 'الاختصاص الدقيق', 
+            'سنة التخرج', 'رقم امر التعيين', 'تاريخ التعيين', 'تاريخ المباشرة', 'رقم الهاتف', 
+            'اسم الام الثلاثي', 'الحالة الزوجية', 'اسم الزوجة', 'الرقم الوطني', 'تاريخ اصداره', 
+            'تاريخ التولد', 'جهة الإصدار', 'محل الولادة', 'رقم البطاقة التموينية', 'محلة - زقاق - دار', 
+            'رقم وثيقة التخرج', 'تاريخ اصدار وثيقة التخرج', 'رقم صحة الصدور', 'تاريخ صحة الصدور', 
+            'عنوان السكن', 'اقرب نقطة دالة', 'رقم الهوية', 'الملاحظات']
+    sample_data = [['أحمد محمد علي الحسيني', 'EMP-1001', 'رئيس مهندسين قدم', 'بكالوريوس', 'ذكر'] + [""] * 28]
+    return pd.DataFrame(sample_data, columns=cols)
 
 def save_data(df):
     df.to_excel(DATA_FILE, index=False)
@@ -130,7 +122,10 @@ def save_data(df):
 
 df = load_data()
 
-# 4. محاكاة الهيدر العلوي الخاص بواجهة المحاكاة
+# تحديد العمود الرئيسي بأمان (سواء كان باسم الاسم الرباعي أو أول عمود متوفر)
+name_col = 'الاسم الرباعي' if 'الاسم الرباعي' in df.columns else df.columns[0]
+
+# 4. شريط العنوان الزجاجي العلوي
 st.markdown("""
 <div class="mock-header">
     <div>متصل وبانتظار الأوامر</div>
@@ -139,10 +134,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 5. القائمة الجانبية (Left Sidebar) - محاكاة القائمة الزجاجية في image_2.png
-# استدعاء الراديو الجانبي كأوامر
+# 5. القائمة الجانبية المائية (Left Sidebar)
 with st.sidebar:
-    # محاكاة اللوحة العلوية للقائمة
     st.markdown("""
     <div class="glass-card" style="padding: 15px; margin-bottom: 15px; background: rgba(255,255,255,0.7) !important;">
         <h3 style="color: #0369a1; margin:0;">لوحة تحكم الأوامر</h3>
@@ -150,61 +143,61 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    # محاكاة الأزرار الخمسة الزجاجية كخيارات
     action = st.radio(
         "اختر العملية المطلوبة:",
-        ["🔍 استعلام وبحث حقيقي", "➕ إضافة موظف جديد (33 حقل)", "✏️ تعديل وحذف البيانات", "📥 استيراد / تصدير Excel", "📣 دليل نشر الرابط مجاناً"],
+        ["🔍 استعلام وبحث حقيقي", "➕ إضافة موظف جديد", "✏️ تعديل بيانات", "❌ حذف موظف", "📥 استيراد / تصدير Excel"],
         label_visibility="collapsed"
     )
     
-    # محاكاة إحصائيات قاعدة البيانات في الأسفل كما في المحاكاة
+    # حساب عدد الموظفين ديناميكياً وبدون خطأ
+    valid_rows = df[df[name_col].notna() & (df[name_col].astype(str).str.strip() != "")]
+    emp_count = len(valid_rows)
+    
     st.markdown(f"""
     <div class="glass-card" style="padding: 10px; margin-top: 30px; background: rgba(255,255,255,0.8) !important;">
         <p style="color: #0369a1; margin:0;">إحصائيات قاعدة البيانات</p>
-        <h1 style="color: #0284c7; margin:0;">{len(df[df['الاسم الرباعي'] != ""])}</h1>
+        <h1 style="color: #0284c7; margin:0;">{emp_count}</h1>
         <p style="color: #0369a1; font-size: 0.8rem; margin:0;">إجمالي الموظفين المسجلين</p>
     </div>
     """, unsafe_allow_html=True)
 
-# 6. منطقة المحتوى الرئيسية (Main Area) - مطابقة لتصميم المحاكاة الزجاجي
+# 6. لوحة المحتوى الرئيسية
 st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
 
-# --- 1. أمر استعلام وبحث (طريقة المحاكاة) ---
 if action == "🔍 استعلام وبحث حقيقي":
     st.markdown("""
-    <h1 style="color: #0369a1; margin:0;">🔍 استعلام وعرض قاعدة بيانات الموظفين</h1>
+    <h2 style="color: #0369a1; margin:0;">🔍 استعلام وعرض قاعدة بيانات الموظفين</h2>
     <p style="color: #0284c7;">ابحث عن أي موظف بالاسم، الرقم الوظيفي، أو رقم الهوية الوطنية للمعاينة الفورية والطباعة</p>
     """, unsafe_allow_html=True)
     
-    st.markdown("<p style='color: #0369a1; margin-top: 20px; font-weight:bold;'>أدخل الكلمة المفتاحية للبحث:</p>", unsafe_allow_html=True)
-    search_term = st.text_input("", placeholder="ابحث باسم الموظف أو الرقم الوظيفي أو الهوية...", label_visibility="collapsed")
+    search_term = st.text_input("أدخل الكلمة المفتاحية للبحث:", placeholder="ابحث باسم الموظف أو الرقم الوظيفي أو الهوية...")
     
     filtered_df = df.copy()
     if search_term:
         filtered_df = df[
             df.astype(str).apply(lambda row: row.str.contains(search_term, case=False).any(), axis=1)
         ]
-        st.success(f"تم العثور على {len(filtered_df[filtered_df['الاسم الرباعي'] != ''])} سجل")
+        st.success(f"تم العثور على {len(filtered_df)} سجل")
     
-    # أزرار الإجراءات الخاصة بالمحاكاة
     col1, col2 = st.columns(2)
     with col1:
-        st.button("تصدير أكسل Excel")
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            filtered_df.to_excel(writer, index=False, sheet_name='الموظفين')
+        st.download_button("📥 تصدير أكسل Excel", data=output.getvalue(), file_name="بيانات_الموظفين.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     with col2:
-        st.button("طباعة الاستمارة الزجاجية")
+        if st.button("🖨️ طباعة الاستمارة الزجاجية"):
+            st.info("استخدم أمر الطباعة المباشر من المتصفح (Ctrl + P) لطباعة الاستمارة.")
 
-    st.markdown("<p style='color: #0369a1; margin-top: 30px; font-weight:bold;'>جدول سجلات الموظفين العام</p>", unsafe_allow_html=True)
-    # عرض الجدول بمحاذاة للوسط وعرض كامل
+    st.markdown("<h4 style='color: #0369a1; margin-top: 20px;'>جدول سجلات الموظفين العام</h4>", unsafe_allow_html=True)
     st.dataframe(filtered_df, use_container_width=True)
 
-# --- 2. أمر إضافة موظف (كما في التطبيق السابق ولكن بستايل المحاكاة) ---
-elif action == "➕ إضافة موظف جديد (33 حقل)":
-    st.markdown("<h3>➕ إضافة موظف جديد</h3>", unsafe_allow_html=True)
-    with st.form("add_form", clear_on_submit=True):
+elif action == "➕ إضافة موظف جديد":
+    st.markdown("<h2 style='color: #0369a1;'>➕ إضافة موظف جديد</h2>", unsafe_allow_html=True)
+    with st.form("add_form"):
         new_data = {}
-        # تقسیم الحقول إلى أعمدة متناسقة
+        cols_list = list(df.columns)
         col1, col2 = st.columns(2)
-        cols_list = list(df.columns)[1:] # تخطي حقل التسلسل
         for i, col_name in enumerate(cols_list):
             if i % 2 == 0:
                 new_data[col_name] = col1.text_input(col_name)
@@ -213,17 +206,58 @@ elif action == "➕ إضافة موظف جديد (33 حقل)":
                 
         submit = st.form_submit_button("💾 حفظ الموظف الجديد")
         if submit:
-            # إضافة رقم تسلسلي تلقائي
-            next_id = df['#'].max() + 1 if not df.empty else 1
-            new_row = pd.DataFrame([{"#": next_id, **new_data}])
+            new_row = pd.DataFrame([new_data])
             df = pd.concat([df, new_row], ignore_index=True)
             save_data(df)
             st.success("تمت إضافة الموظف بنجاح!")
             st.rerun()
 
-# --- بقية الأوامر (تعديل، حذف، استيراد) ---
-# ... (نفس منطق الكود السابق ولكن بوضعها داخل st.markdown("<div class='glass-card'>"))
-else:
-    st.info(f"الأمر ({action}) قيد التطوير ليطابق واجهة المحاكاة.")
+elif action == "✏️ تعديل بيانات":
+    st.markdown("<h2 style='color: #0369a1;'>✏️ تعديل بيانات موظف</h2>", unsafe_allow_html=True)
+    emp_list = df[name_col].dropna().astype(str).tolist()
+    if emp_list:
+        selected_emp = st.selectbox("اختر الموظف المراد تعديل بياناته:", emp_list)
+        emp_index = df[df[name_col].astype(str) == selected_emp].index[0]
+        emp_data = df.loc[emp_index]
+        
+        with st.form("edit_form"):
+            updated_data = {}
+            col1, col2 = st.columns(2)
+            for i, col_name in enumerate(df.columns):
+                val = str(emp_data[col_name]) if pd.notna(emp_data[col_name]) else ""
+                if i % 2 == 0:
+                    updated_data[col_name] = col1.text_input(col_name, value=val)
+                else:
+                    updated_data[col_name] = col2.text_input(col_name, value=val)
+                    
+            update_btn = st.form_submit_button("🔄 تحديث البيانات")
+            if update_btn:
+                for k, v in updated_data.items():
+                    df.loc[emp_index, k] = v
+                save_data(df)
+                st.success("تم تحديث البيانات بنجاح!")
+                st.rerun()
+
+elif action == "❌ حذف موظف":
+    st.markdown("<h2 style='color: #0369a1;'>❌ حذف موظف من النظام</h2>", unsafe_allow_html=True)
+    emp_list = df[name_col].dropna().astype(str).tolist()
+    if emp_list:
+        selected_emp = st.selectbox("اختر الموظف المراد حذفه:", emp_list)
+        if st.button("🚨 تأكيد الحذف النهائي"):
+            df = df[df[name_col].astype(str) != selected_emp]
+            save_data(df)
+            st.success(f"تم حذف الموظف ({selected_emp}) بنجاح!")
+            st.rerun()
+
+elif action == "📥 استيراد / تصدير Excel":
+    st.markdown("<h2 style='color: #0369a1;'>📥 استيراد وتصدير قاعدة البيانات</h2>", unsafe_allow_html=True)
+    uploaded_file = st.file_uploader("اختر ملف Excel (.xlsx):", type=["xlsx", "xls"])
+    if uploaded_file is not None:
+        new_df = pd.read_excel(uploaded_file)
+        if st.button("دمج البيانات المرفوعة مع القاعدة الحالية"):
+            df = pd.concat([df, new_df], ignore_index=True)
+            save_data(df)
+            st.success("تم استيراد البيانات ودمجها بنجاح!")
+            st.rerun()
 
 st.markdown("</div>", unsafe_allow_html=True)
