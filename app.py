@@ -11,35 +11,36 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. تصميم CSS المتقدم لدعم الاتجاه من اليمين إلى اليسار (RTL) بالكامل
+# 2. CSS مصحح للاتجاه من اليمين إلى اليسار (RTL) والشريط الجانبي الأيمن
 st.markdown("""
 <style>
-    /* تطبيق الاتجاه من اليمين لليسار على كامل الواجهة */
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebar"] {
+    /* الاتجاه العام من اليمين إلى اليسار */
+    html, body, [data-testid="stAppViewContainer"] {
         direction: rtl !important;
         text-align: right !important;
     }
-
+    
     .stApp {
         background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #e1f5fe 100%);
     }
-    
-    /* تثبيت لوحة التحكم الجانبية في اليمين وتعديل حوافها الزجاجية */
+
+    /* تثبيت القائمة الجانبية (Sidebar) على اليمين بالكامل */
     [data-testid="stSidebar"] {
         right: 0 !important;
         left: auto !important;
-        background: rgba(255, 255, 255, 0.5) !important;
+        background: rgba(255, 255, 255, 0.65) !important;
         backdrop-filter: blur(15px);
         -webkit-backdrop-filter: blur(15px);
-        border-left: 1px solid rgba(255, 255, 255, 0.7) !important;
+        border-left: 1px solid rgba(255, 255, 255, 0.8) !important;
         border-right: none !important;
         border-radius: 20px 0 0 20px !important;
-        box-shadow: -4px 0 24px rgba(0,0,0,0.03) !important;
+        box-shadow: -4px 0 24px rgba(0,0,0,0.04) !important;
     }
     
     [data-testid="stSidebar"] > div:first-child {
         background-color: transparent !important;
         background-image: none !important;
+        direction: rtl !important;
     }
     
     .stDeployButton, #MainMenu, header, footer {
@@ -47,21 +48,22 @@ st.markdown("""
     }
     
     [data-testid="stAppViewContainer"] {
-        padding-top: 1.5rem;
+        padding-top: 1rem;
     }
 
-    /* محاذاة كافة النصوص والحقول والمدخلات للوسط */
+    /* محاذاة كافة النصوص والمدخلات في الوسط */
     p, h1, h2, h3, h4, label, input, select, textarea {
         text-align: center !important;
     }
     
-    /* الجداول تبدأ وتترتب من اليمين إلى اليسار */
-    [data-testid="stDataFrame"], div[role="grid"] {
+    /* محاذاة جدول البيانات من اليمين لتتحاذا الأعمدة عربيًا */
+    [data-testid="stDataFrame"], div[data-testid="stTable"], div[role="grid"] {
         direction: rtl !important;
+        text-align: center !important;
     }
     
     .glass-card {
-        background: rgba(255, 255, 255, 0.6) !important;
+        background: rgba(255, 255, 255, 0.65) !important;
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border-radius: 16px;
@@ -72,10 +74,10 @@ st.markdown("""
     }
     
     .mock-header {
-        background: rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.65);
         backdrop-filter: blur(10px);
-        padding: 10px 20px;
-        border-radius: 12px;
+        padding: 12px 24px;
+        border-radius: 14px;
         border: 1px solid rgba(255, 255, 255, 0.8);
         display: flex;
         justify-content: space-between;
@@ -92,7 +94,7 @@ st.markdown("""
         transition: all 0.3s ease;
         width: 100%;
         border: none;
-        background: rgba(255, 255, 255, 0.7) !important;
+        background: rgba(255, 255, 255, 0.75) !important;
         border: 1px solid rgba(255, 255, 255, 0.9);
         color: #0284c7 !important;
     }
@@ -113,27 +115,42 @@ st.markdown("""
 
 DATA_FILE = "Data_Employees.xlsx"
 
-# 3. تحميل البيانات بأمان
+# قائمة الحقول الرسمية الشاملة
+OFFICIAL_COLUMNS = [
+    'الاسم الرباعي', 'الرقم الوظيفي', 'العنوان الوظيفي', 'الشهادة', 'الجنس', 
+    'الدرجة الوظيفية', 'المرحلة', 'الراتب الاسمي', 'الاختصاص العام', 'الاختصاص الدقيق', 
+    'سنة التخرج', 'رقم امر التعيين', 'تاريخ التعيين', 'تاريخ المباشرة', 'رقم الهاتف', 
+    'اسم الام الثلاثي', 'الحالة الزوجية', 'اسم الزوجة', 'الرقم الوطني', 'تاريخ اصداره', 
+    'تاريخ التولد', 'جهة الإصدار', 'محل الولادة', 'رقم البطاقة التموينية', 'محلة - زقاق - دار', 
+    'رقم وثيقة التخرج', 'تاريخ اصدار وثيقة التخرج', 'رقم صحة الصدور', 'تاريخ صحة الصدور', 
+    'عنوان السكن', 'اقرب نقطة دالة', 'رقم الهوية', 'الملاحظات'
+]
+
+# 3. قراءة البيانات بشكل ذكي يعالج مشكلة Unnamed: 1 و Unnamed: 2
 @st.cache_data(ttl=1)
 def load_data():
     if os.path.exists(DATA_FILE):
         try:
             df = pd.read_excel(DATA_FILE)
+            # إذا كان الصف الأول يحتوي على العناوين الأصلية أو أن الأعمدة Unnamed
+            if any('Unnamed' in str(c) for c in df.columns):
+                for idx, row in df.iterrows():
+                    row_vals = [str(v).strip() for v in row.values if pd.notna(v)]
+                    if any('الاسم' in v or 'الوظيفي' in v for v in row_vals):
+                        df = pd.read_excel(DATA_FILE, header=idx+1)
+                        break
+            
             df.columns = [str(col).strip() for col in df.columns]
-            if not df.empty:
+            df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+            
+            if len(df.columns) > 0 and not df.empty:
                 return df
         except Exception:
             pass
-            
-    cols = ['الاسم الرباعي', 'الرقم الوظيفي', 'العنوان الوظيفي', 'الشهادة', 'الجنس', 
-            'الدرجة الوظيفية', 'المرحلة', 'الراتب الاسمي', 'الاختصاص العام', 'الاختصاص الدقيق', 
-            'سنة التخرج', 'رقم امر التعيين', 'تاريخ التعيين', 'تاريخ المباشرة', 'رقم الهاتف', 
-            'اسم الام الثلاثي', 'الحالة الزوجية', 'اسم الزوجة', 'الرقم الوطني', 'تاريخ اصداره', 
-            'تاريخ التولد', 'جهة الإصدار', 'محل الولادة', 'رقم البطاقة التموينية', 'محلة - زقاق - دار', 
-            'رقم وثيقة التخرج', 'تاريخ اصدار وثيقة التخرج', 'رقم صحة الصدور', 'تاريخ صحة الصدور', 
-            'عنوان السكن', 'اقرب نقطة دالة', 'رقم الهوية', 'الملاحظات']
-    sample_data = [['أحمد محمد علي الحسيني', 'EMP-1001', 'رئيس مهندسين قدم', 'بكالوريوس', 'ذكر'] + [""] * 28]
-    return pd.DataFrame(sample_data, columns=cols)
+
+    # بيانات افتراضية سليمة ومطابقة
+    sample_data = [['اياد سامي مهدي عبد', '101864842', 'مستشار قانوني', 'بكالوريوس', 'ذكر', 'الثالثة', '1', '101864842', 'قانون عام', 'قانون عام', '2004'] + [""] * 22]
+    return pd.DataFrame(sample_data, columns=OFFICIAL_COLUMNS)
 
 def save_data(df):
     df.to_excel(DATA_FILE, index=False)
@@ -142,7 +159,7 @@ def save_data(df):
 df = load_data()
 name_col = 'الاسم الرباعي' if 'الاسم الرباعي' in df.columns else df.columns[0]
 
-# 4. شريط العنوان الزجاجي العلوي
+# 4. الهيدر الزجاجي العلوي
 st.markdown("""
 <div class="mock-header">
     <div>متصل وبانتظار الأوامر</div>
@@ -151,12 +168,12 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 5. القائمة الجانبية المائية في جهة اليمين
+# 5. لوحة التحكم الجانبية على اليمين (RTL Sidebar)
 with st.sidebar:
     st.markdown("""
-    <div class="glass-card" style="padding: 15px; margin-bottom: 15px; background: rgba(255,255,255,0.7) !important;">
+    <div class="glass-card" style="padding: 15px; margin-bottom: 15px; background: rgba(255,255,255,0.75) !important;">
         <h3 style="color: #0369a1; margin:0;">لوحة تحكم الأوامر</h3>
-        <p style="color: #0284c7; font-size: 0.9rem;">Streamlit Interactive Controls</p>
+        <p style="color: #0284c7; font-size: 0.85rem; margin-top: 4px;">Streamlit Interactive Controls</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -166,24 +183,24 @@ with st.sidebar:
         label_visibility="collapsed"
     )
     
-    valid_rows = df[df[name_col].notna() & (df[name_col].astype(str).str.strip() != "")]
+    valid_rows = df[df[name_col].notna() & (df[name_col].astype(str).str.strip() != "") & (~df[name_col].astype(str).str.contains('None', case=False))]
     emp_count = len(valid_rows)
     
     st.markdown(f"""
-    <div class="glass-card" style="padding: 10px; margin-top: 30px; background: rgba(255,255,255,0.8) !important;">
-        <p style="color: #0369a1; margin:0;">إحصائيات قاعدة البيانات</p>
-        <h1 style="color: #0284c7; margin:0;">{emp_count}</h1>
+    <div class="glass-card" style="padding: 12px; margin-top: 25px; background: rgba(255,255,255,0.8) !important;">
+        <p style="color: #0369a1; margin:0; font-size: 0.9rem;">إحصائيات قاعدة البيانات</p>
+        <h1 style="color: #0284c7; margin:5px 0;">{emp_count}</h1>
         <p style="color: #0369a1; font-size: 0.8rem; margin:0;">إجمالي الموظفين المسجلين</p>
     </div>
     """, unsafe_allow_html=True)
 
-# 6. لوحة المحتوى الرئيسية
+# 6. منطقة المحتوى الرئيسية
 st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
 
 if action == "🔍 استعلام وبحث حقيقي":
     st.markdown("""
     <h2 style="color: #0369a1; margin:0;">🔍 استعلام وعرض قاعدة بيانات الموظفين</h2>
-    <p style="color: #0284c7;">ابحث عن أي موظف بالاسم، الرقم الوظيفي، أو رقم الهوية الوطنية للمعاينة الفورية والطباعة</p>
+    <p style="color: #0284c7; margin-bottom: 20px;">ابحث عن أي موظف بالاسم، الرقم الوظيفي، أو رقم الهوية الوطنية للمعاينة الفورية والطباعة</p>
     """, unsafe_allow_html=True)
     
     search_term = st.text_input("أدخل الكلمة المفتاحية للبحث:", placeholder="ابحث باسم الموظف أو الرقم الوظيفي أو الهوية...")
@@ -205,8 +222,13 @@ if action == "🔍 استعلام وبحث حقيقي":
         if st.button("🖨️ طباعة الاستمارة الزجاجية"):
             st.info("استخدم أمر الطباعة المباشر من المتصفح (Ctrl + P) لطباعة الاستمارة.")
 
-    st.markdown("<h4 style='color: #0369a1; margin-top: 20px;'>جدول سجلات الموظفين العام</h4>", unsafe_allow_html=True)
-    st.dataframe(filtered_df, use_container_width=True)
+    st.markdown("<h4 style='color: #0369a1; margin-top: 25px;'>جدول سجلات الموظفين العام</h4>", unsafe_allow_html=True)
+    
+    # تنظيف الجدول من قيم None الظاهرة في صورتك وإعادة ترتيب العناوين بالكامل
+    display_df = filtered_df.fillna("").replace("None", "").copy()
+    
+    # عرض الجدول بدون إندكس وبدعم كامل للاتجاه اليمين
+    st.dataframe(display_df, use_container_width=True, hide_index=True)
 
 elif action == "➕ إضافة موظف جديد":
     st.markdown("<h2 style='color: #0369a1;'>➕ إضافة موظف جديد</h2>", unsafe_allow_html=True)
@@ -228,7 +250,7 @@ elif action == "➕ إضافة موظف جديد":
             st.success("تمت إضافة الموظف بنجاح!")
             st.rerun()
 
-elif action == "✏️ تعديل بيانات":
+elif action == "✏️️ تعديل بيانات":
     st.markdown("<h2 style='color: #0369a1;'>✏️ تعديل بيانات موظف</h2>", unsafe_allow_html=True)
     emp_list = df[name_col].dropna().astype(str).tolist()
     if emp_list:
